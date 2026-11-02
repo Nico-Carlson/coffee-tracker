@@ -22,6 +22,19 @@ A lightweight web application built with vanilla PHP, MySQL/MariaDB, and custom 
 
 ---
 
+## Screenshots
+
+### Coffee Inventory
+![Coffees Dashboard](docs/screenshots/coffees.png)
+
+### Brew History
+![Brew History Log](docs/screenshots/brew-history.png)
+
+### Logging a New Brew
+![New Brew Form](docs/screenshots/new-brew.png)
+
+---
+
 ## Project Structure
 
 ```text
