@@ -20,6 +20,30 @@
 
 ## Changelog
 
+### 2026-11-03: PHP pages use coffeeId (branch `brews-use-coffee-id`)
+
+- **Problem:** after the schema change, `coffeeId` is NOT NULL but the forms
+  still posted and validated a coffee name.
+- **Change:**
+  - `includes/helpers.php`: `readBrewInput()` now takes a list of the user's
+    coffee IDs, validates `coffeeId` as an int that must be in that list, and
+    returns `:coffeeId`. This also stops a user logging a brew against
+    another user's coffee.
+  - `newBrew.php` and `editBrew.php`: the dropdown submits `coffeeId` (label
+    is the coffee name); INSERT and UPDATE write `coffeeId`.
+  - Style pass for LazyVim/PSR-12: braces on their own lines, braces on every
+    `if`, spacing, `echo` HTML block replaced by plain HTML, and the
+    `options()` helper in `editBrew.php` replaced by inline loops.
+- **Gotcha:** PDO can return IDs as strings, so IDs are cast to int before the
+  strict `in_array` check. Without the cast every coffee fails validation.
+- **Temporary:** INSERT and UPDATE still write `coffeeType` (copied from the
+  coffee's name) because it is NOT NULL and `brewHistory.php` still reads it.
+- **Tested by hand:** add brew, failed validation keeps the selected coffee,
+  edit rating only, switch a brew to another coffee.
+- **Still open:** `brewHistory.php` and `deleteCoffee.php` have not been
+  checked yet; once `brewHistory.php` reads through a JOIN, drop `coffeeType`.
+  Fix the `schema.sql` drift (needs regenerating from the live database).
+
 ### 2026-11-03: Link brews to coffees (branch `link-brews-to-coffees`)
 
 - **Problem:** `tblBrew` referenced a coffee only by the free-text column
