@@ -90,6 +90,12 @@
 - [ ] README refresh, screenshots, demo video
 - [ ] Replace the browser `confirm()` popups (delete brew, delete coffee) with a styled in-page modal, using the native `<dialog>` element. It should keep the cascade warning on coffee delete.
 
+## Future features
+
+- Change the favicon (the browser tab icon) to a coffee-themed one.
+- Transition to a mobile app. The JSON API on the roadmap is the first step,
+  since a mobile client would call it instead of the PHP pages.
+
 ## Next steps (in order)
 
 1. `coffees.php`: warn about cascade in the delete confirm.
@@ -100,6 +106,28 @@
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-03: Schema cleanup (branch `schema-cleanup`)
+
+- **Found by:** dumping the live schema with `mysqldump --no-data` and
+  comparing it to `schema.sql`. The live database had drifted from the repo.
+- **Migrations** (run by hand in phpMyAdmin, in order):
+  - `004_tidy_coffee_table.sql`: dropped the unused `tblCoffee.numBrews`
+    column (grep confirmed nothing read it) and a duplicate unique index
+    (`userID_2`).
+  - `005_convert_to_utf8mb4.sql`: converted `tblUser`, `tblCoffee` and
+    `tblBrew` from latin1 to `utf8mb4_unicode_ci`.
+- **Connection:** `includes/db_connect.php` now sets `charset=utf8mb4` and PDO
+  options (exception errors, associative fetch, real prepared statements with
+  `EMULATE_PREPARES => false`). Without the charset, the connection would
+  still have talked latin1 to the converted tables.
+- **Gotcha:** `information_schema` queries run in phpMyAdmin may have
+  `DATABASE()` set to `information_schema`. Filter by table name
+  (`WHERE TABLE_NAME LIKE 'tbl%'`) instead.
+- **Tested by hand:** accented coffee name saves and displays correctly;
+  brew history, edit, and new brew still work after the fetch-mode change.
+- **Still open:** `schema.sql` still describes the old schema and needs to be
+  regenerated.
 
 ### 2026-11-03: Drop brews.coffeeType (branch `brews-use-coffee-id`)
 
