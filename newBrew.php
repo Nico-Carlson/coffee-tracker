@@ -22,18 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         try {
-            // coffeeType is still written (from the coffee's name) because other pages
-            // read it. Remove it when those pages switch to coffeeId.
             $stmt = $pdo->prepare(
-                'INSERT INTO tblBrew (userID, coffeeId, coffeeType, coffeeGrams, waterGrams, brewDate,
+                'INSERT INTO tblBrew (userID, coffeeId, coffeeGrams, waterGrams, brewDate,
                                       waterTemp, grindSize, bloomTime, totalSeconds, rating, brewNotes)
-                 VALUES (:userID, :coffeeId, :coffeeType, :coffeeGrams, :waterGrams, :brewDate,
+                 VALUES (:userID, :coffeeId, :coffeeGrams, :waterGrams, :brewDate,
                          :waterTemp, :grindSize, :bloomTime, :totalSeconds, :rating, :brewNotes)'
             );
-            $stmt->execute($data + [
-                ':userID'     => $_SESSION['userID'],
-                ':coffeeType' => $coffeeNames[$data[':coffeeId']],
-            ]);
+            $stmt->execute($data + [':userID' => $_SESSION['userID']]);
             header('Location: brewHistory.php');
             exit();
         } catch (PDOException $e) {

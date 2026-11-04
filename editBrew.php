@@ -25,19 +25,16 @@ try {
 
         [$data, $errors] = readBrewInput(array_keys($coffeeNames));
         if (!$errors) {
-            // coffeeType is still written (from the coffee's name) because other pages
-            // read it. Remove it when those pages switch to coffeeId.
             $stmt = $pdo->prepare(
-                'UPDATE tblBrew SET coffeeId = :coffeeId, coffeeType = :coffeeType, coffeeGrams = :coffeeGrams,
+                'UPDATE tblBrew SET coffeeId = :coffeeId, coffeeGrams = :coffeeGrams,
                         waterGrams = :waterGrams, brewDate = :brewDate, waterTemp = :waterTemp,
                         grindSize = :grindSize, bloomTime = :bloomTime, totalSeconds = :totalSeconds,
                         rating = :rating, brewNotes = :brewNotes
                  WHERE brewID = :id AND userID = :uid'
             );
             $stmt->execute($data + [
-                ':coffeeType' => $coffeeNames[$data[':coffeeId']],
-                ':id'         => (int) $id,
-                ':uid'        => $_SESSION['userID'],
+                ':id'  => (int) $id,
+                ':uid' => $_SESSION['userID'],
             ]);
             header('Location: brewHistory.php');
             exit();
