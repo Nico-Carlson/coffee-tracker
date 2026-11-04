@@ -14,3 +14,7 @@ Thumbs.db
 # Logs & Web Server Artifacts
 *.log
 error_log
+
+# PHP CS Fixer configuration
+/.php-cs-fixer.cache
+/.php-cs-fixer.php
