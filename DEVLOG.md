@@ -14,9 +14,16 @@
 
 ## How to work with me (instructions for any assistant)
 
-- I want to write out all the code to better understand the codebase and learn as i go
-- one step at a time to prevent backtracking and multiple errors at once
-- reminders on the best time to commit, merge, branch and tag
+- I write all the code myself to learn it. Show only the lines that change, and
+  send a whole file only when it fixes syntax or style errors LazyVim flags.
+  (When I explicitly ask you to write a file, do that.)
+- One step at a time. Wait for my output before the next step. Never queue a
+  list of steps.
+- Tell me when to commit, branch, merge and tag. Give git commands with the
+  message inline (`-m`), never open the editor.
+- Say when something is a guess. Ask me to paste output instead of assuming
+  database or file state.
+- Keep this file current: record context, decisions and gotchas as we go.
 
 ## Context
 
@@ -75,34 +82,79 @@
   before the code that uses it works (this was done once: `main` briefly had
   a NOT NULL column the forms did not fill).
 
+## Workflow notes <- new
+
+- Shell is fish: quote globs (`--include="*.php"`). Editor is LazyVim (nvim) and
+  flags PSR-12 style issues; fix them.
+- Local tools: XAMPP at `/opt/lampp`, so `/opt/lampp/bin/mysqldump`,
+  `/opt/lampp/bin/mysql`, `/opt/lampp/bin/php`. The MySQL user in
+  `db_connect.php` cannot CREATE DATABASE, so a scratch database for testing a
+  restore is not possible until Docker.
+- `includes/db_connect.php` holds real credentials and is meant to be
+  git-ignored; `db_connect.example.php` is the tracked template. Not yet
+  confirmed with `git check-ignore includes/db_connect.php`: do that first.
+- Git: one descriptive branch per piece of work; commit after each working
+  step; merge with `git merge --no-ff -m "<message>" <branch>`; tag
+  milestones before deleting the branch. Tags so far:
+  `brews-linked-by-coffee-id`, `utf8mb4-schema-cleanup`.
+- Schema changes go in numbered files in `database/migrations/`, run by hand in
+  phpMyAdmin. The matching code must change in the same sitting: do not test
+  between the two (a NOT NULL column briefly broke inserts once).
+- phpMyAdmin: `DATABASE()` can be `information_schema`, so filter by
+  `TABLE_NAME LIKE 'tbl%'`. `SHOW CREATE TABLE` output is truncated; use
+  `information_schema` queries instead.
+
+## Demo talking points (for the 2-minute video) <- new
+
+- Normalized relational model: brews reference coffees by foreign key, with
+  `ON DELETE CASCADE`; the history page and brew counts use JOINs.
+- Migrations as version-controlled SQL; `schema.sql` regenerated from the live DB.
+- PDO prepared statements (real, not emulated), `userID` scoping on every query,
+  output escaped with `e()`, input validated in one function (`readBrewInput`).
+- utf8mb4 end to end (tables and connection).
+- Found and fixed a real bug during the refactor: the delete-coffee warning
+  claimed brews would stay, which stopped being true after the cascade.
+- Honest "next" list: Docker with a pinned PHP, CI, metrics dashboard, API.
+
 ## Status
 
-- [x] Brews linked to coffees by foreign key (`coffeeId`)
-- [x] New/edit brew forms and brew history use `coffeeId` (history uses a JOIN)
-- [ ] Check `coffees.php`; update the delete confirm to warn about cascade
-- [ ] Drop `tblBrew.coffeeType`, and stop writing it in `newBrew`/`editBrew`
-- [x] Regenerate `schema.sql`
-- [ ] add a seeder with demo data
-- [ ] Style pass on the remaining PHP files
+- [x] Brews linked to coffees by foreign key (`coffeeId`); `coffeeType` dropped
+- [x] New/edit brew, brew history and coffees pages use `coffeeId` (JOINs)
+- [x] Tables on utf8mb4; PDO connection on utf8mb4 with explicit options
+- [x] `schema.sql` regenerated from the live database
+- [ ] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
+- [ ] Style/security review of files not yet touched: `auth.php`, `login.php`,
+      `newUser.php`, `logout.php`, `index.php`, `errors.php`, `delete/deleteBrew.php`,
+      `includes/brewNav.php`, `includes/signInNav.php`
 - [ ] CSRF tokens on POST forms
-- [ ] Metrics dashboard (ratio, flow rate, averages by roast and process)
+- [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
+      cascade warning on coffee delete)
+- [ ] `declare(strict_types=1)` after checking callers (PDO ints vs `?int` params)
+- [ ] Metrics dashboard (brew ratio, flow rate, averages by roast/process/coffee)
 - [ ] Router and repositories (MVC), JSON API, async search
-- [ ] Docker (PHP 8.4), CI with PHPStan and PHP-CS-Fixer
-- [ ] README refresh, screenshots, demo video
-- [ ] Replace the browser `confirm()` popups (delete brew, delete coffee) with a styled in-page modal, using the native `<dialog>` element. It should keep the cascade warning on coffee delete.
+- [ ] Docker (PHP 8.4 pinned) + clean-install test of `schema.sql`; CI with
+      PHPStan and PHP-CS-Fixer
+- [ ] README refresh and new screenshots (`docs/screenshots` are from before
+      the refactor); demo video
 
-## Future features
+## Future features <- (keep the section added earlier)
 
-- Change the favicon (the browser tab icon) to a coffee-themed one.
-- Transition to a mobile app. The JSON API on the roadmap is the first step,
-  since a mobile client would call it instead of the PHP pages.
+- Change the favicon to a coffee-themed icon.
+- Transition to a mobile app (the JSON API is the first step).
+- Optional schema tightening: `roast` as ENUM, drop NOT NULL on optional text
+  columns, add `createdAt`/`brewDate` precision if the dashboard needs it.
 
-## Next steps (in order)
+## Next steps (in order) <- replace
 
-1. `coffees.php`: warn about cascade in the delete confirm.
-2. Remove the temporary `coffeeType` column (migration 003 plus code).
-3. Regenerate `schema.sql`, then build the demo-data seeder.
-4. Metrics queries and dashboard.
+1. Seeder. Design: CLI script that creates a `demo` user, about 12 coffees
+   across 10+ roasters and about 60 brews over the last 3 months, all inside one
+   PDO transaction, re-runnable (delete the demo user first; cascades clean up).
+   Needs the password storage method: run
+   `grep -n "password" newUser.php login.php` and check for
+   `password_hash`/`password_verify`.
+2. Review the files listed in Status for lint and security, one at a time.
+3. Metrics queries and dashboard.
+4. Docker, then CI, then (if time) router/repositories and the API.
 
 - New chat: paste this file first, plus the file being edited.
 
