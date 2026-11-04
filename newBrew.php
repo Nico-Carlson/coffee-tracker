@@ -3,40 +3,52 @@
 require __DIR__ . '/includes/db_connect.php';
 /** @var PDO $pdo */
 
-require __DIR__ . '/includes/auth.php'; requireLogin();
+require __DIR__ . '/includes/auth.php';
+requireLogin();
 
-$st = $pdo->prepare("SELECT DISTINCT coffeeName FROM tblCoffee WHERE userID = :uid ORDER BY coffeeName");
+$st = $pdo->prepare('SELECT coffeeId, coffeeName FROM tblCoffee WHERE userID = :uid ORDER BY coffeeName');
 $st->execute([':uid' => $_SESSION['userID']]);
-$coffeeArray = $st->fetchAll(PDO::FETCH_COLUMN);
+$coffees = $st->fetchAll(PDO::FETCH_ASSOC);
+
+// id => name, with ids forced to int so the strict check in readBrewInput() matches
+$coffeeNames = [];
+foreach ($coffees as $row) {
+    $coffeeNames[(int) $row['coffeeId']] = $row['coffeeName'];
+}
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    [$data, $errors] = readBrewInput($coffeeArray);
+    [$data, $errors] = readBrewInput(array_keys($coffeeNames));
 
     if (!$errors) {
         try {
+            // coffeeType is still written (from the coffee's name) because other pages
+            // read it. Remove it when those pages switch to coffeeId.
             $stmt = $pdo->prepare(
-                "INSERT INTO tblBrew (userID, coffeeType, coffeeGrams, waterGrams, brewDate, waterTemp,
-                                      grindSize, bloomTime, totalSeconds, rating, brewNotes)
-                 VALUES (:userID, :coffeeType, :coffeeGrams, :waterGrams, :brewDate, :waterTemp,
-                         :grindSize, :bloomTime, :totalSeconds, :rating, :brewNotes)"
+                'INSERT INTO tblBrew (userID, coffeeId, coffeeType, coffeeGrams, waterGrams, brewDate,
+                                      waterTemp, grindSize, bloomTime, totalSeconds, rating, brewNotes)
+                 VALUES (:userID, :coffeeId, :coffeeType, :coffeeGrams, :waterGrams, :brewDate,
+                         :waterTemp, :grindSize, :bloomTime, :totalSeconds, :rating, :brewNotes)'
             );
-            $stmt->execute($data + [':userID' => $_SESSION['userID']]);
-            header("Location: brewHistory.php");
+            $stmt->execute($data + [
+                ':userID'     => $_SESSION['userID'],
+                ':coffeeType' => $coffeeNames[$data[':coffeeId']],
+            ]);
+            header('Location: brewHistory.php');
             exit();
         } catch (PDOException $e) {
             error_log($e->getMessage());
             $_SESSION['errMessage'] = "Sorry, your brew couldn't be saved.<br><a href='newBrew.php'>New Brew</a>";
-            header("Location: errors.php");
+            header('Location: errors.php');
             exit();
         }
     }
 }
 
-
-echo('
-
-
+// get the current date
+$today = date('Y-m-d');
+$selectedCoffeeId = (int) ($_POST['coffeeId'] ?? 0);
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -47,11 +59,9 @@ echo('
 </head>
 <body>
 
-');
-$activePage = 'new'; require __DIR__ . '/includes/brewNav.php';
-
-// get the current date
-$today = date('Y-m-d');
+<?php
+$activePage = 'new';
+require __DIR__ . '/includes/brewNav.php';
 ?>
 
 <main>
@@ -61,26 +71,26 @@ $today = date('Y-m-d');
     </div>
 
 
-    <?php if ($errors): ?>
+    <?php if ($errors) : ?>
     <div class="panel error"><ul>
-        <?php foreach ($errors as $err): ?><li><?= e($err) ?></li><?php endforeach; ?>
+        <?php foreach ($errors as $err) : ?><li><?= e($err) ?></li><?php endforeach; ?>
         </ul></div>
     <?php endif; ?>
 
     <form class='panel' action='newBrew.php' method='POST'>
         <div class='form-grid'>
-        
+
 
             <div class='field'>
-                <label for='coffeeType'>Coffee</label>
+                <label for='coffeeId'>Coffee</label>
 
-                    <?php if (!$coffeeArray): ?>
+                    <?php if (!$coffeeNames) : ?>
                         <p class="hint">Add a coffee first on the <a href="coffees.php">Coffees</a> page.</p>
                     <?php endif; ?>
 
-                    <select id="coffeeType" name="coffeeType">
-                        <?php foreach ($coffeeArray as $coffee): ?>
-                            <option value="<?= e($coffee) ?>" <?= ($_POST['coffeeType'] ?? '') === $coffee ? 'selected' : '' ?>><?= e($coffee) ?></option>
+                    <select id="coffeeId" name="coffeeId">
+                        <?php foreach ($coffeeNames as $id => $name) : ?>
+                            <option value="<?= e($id) ?>" <?= $selectedCoffeeId === $id ? 'selected' : '' ?>><?= e($name) ?></option>
                         <?php endforeach; ?>
                     </select>
             </div>
@@ -89,7 +99,7 @@ $today = date('Y-m-d');
                 <label for='brewDate'>Date</label>
                 <input type="date" id="brewDate" name="brewDate" value="<?= e($_POST['brewDate'] ?? $today) ?>">
             </div>
-            
+
             <div class='field'>
                 <label for='coffeeGrams'>Coffee (g)</label>
                 <input type="number" id="coffeeGrams" name="coffeeGrams" value="<?= e($_POST['coffeeGrams'] ?? 15) ?>">
@@ -151,6 +161,3 @@ $today = date('Y-m-d');
 </main>
 </body>
 </html>
-
-
-
