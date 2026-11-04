@@ -121,9 +121,12 @@
   coffee's name) because it is NOT NULL and `brewHistory.php` still reads it.
 - **Tested by hand:** add brew, failed validation keeps the selected coffee,
   edit rating only, switch a brew to another coffee.
-- **Still open:** `brewHistory.php` and `deleteCoffee.php` have not been
-  checked yet; once `brewHistory.php` reads through a JOIN, drop `coffeeType`.
-  Fix the `schema.sql` drift (needs regenerating from the live database).
+- **Also changed:** `brewHistory.php` and `coffees.php` read through `coffeeId`
+  (JOINs). The Coffees delete confirm used to say a coffee's brews "stay in
+  your history", which stopped being true after the cascade, so it now says the
+  brews are deleted too. `delete/deleteCoffee.php` got style fixes and a comment.
+- **Still open:** `coffeeType` is still written and can now be dropped.
+  `schema.sql` still needs regenerating from the live database.
 
 ### 2026-11-03: Link brews to coffees (branch `link-brews-to-coffees`)
 
