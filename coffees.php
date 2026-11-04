@@ -3,7 +3,8 @@
 require __DIR__ . '/includes/db_connect.php';
 /** @var PDO $pdo */
 
-require __DIR__ . '/includes/auth.php'; requireLogin();
+require __DIR__ . '/includes/auth.php';
+requireLogin();
 
 // ---------- ADD a coffee ----------
 $errors = [];
@@ -11,24 +12,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $coffeeName = post('coffeeName');
     $roast      = post('roast');
 
-    if ($coffeeName === '') $errors[] = 'Coffee name is required.';
-    if (!in_array($roast, ['Light', 'Medium', 'Dark'], true)) $errors[] = 'Pick a roast level.';
+    if ($coffeeName === '') {
+        $errors[] = 'Coffee name is required.';
+    }
+    if (!in_array($roast, ['Light', 'Medium', 'Dark'], true)) {
+        $errors[] = 'Pick a roast level.';
+    }
 
     if (!$errors) {
         try {
             $stmt = $pdo->prepare(
-                    "INSERT INTO tblCoffee (userID, coffeeName, roaster, roast, process, notes)
-                 VALUES (:uid, :coffeeName, :roaster, :roast, :process, :notes)"
+                'INSERT INTO tblCoffee (userID, coffeeName, roaster, roast, process, notes)
+                 VALUES (:uid, :coffeeName, :roaster, :roast, :process, :notes)'
             );
             $stmt->execute([
-                    ':uid'        => $_SESSION['userID'],
-                    ':coffeeName' => $coffeeName,
-                    ':roaster'    => post('roaster'),
-                    ':roast'      => $roast,
-                    ':process'    => post('process'),
-                    ':notes'      => post('notes'),
+                ':uid'        => $_SESSION['userID'],
+                ':coffeeName' => $coffeeName,
+                ':roaster'    => post('roaster'),
+                ':roast'      => $roast,
+                ':process'    => post('process'),
+                ':notes'      => post('notes'),
             ]);
-            header("Location: coffees.php");
+            header('Location: coffees.php');
             exit();
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) {
@@ -36,29 +41,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 error_log($e->getMessage());
                 $_SESSION['errMessage'] = "Sorry, that coffee couldn't be saved.<br><a href='coffees.php'>Back to coffees</a>";
-                header("Location: errors.php");
+                header('Location: errors.php');
                 exit();
             }
         }
     }
 }
+
 // ---------- LIST this user's coffees (brew count comes from one JOIN, not a query per card) ----------
 try {
     $stmt = $pdo->prepare(
-        "SELECT c.coffeeId, c.coffeeName, c.roaster, c.roast, c.process, c.notes,
+        'SELECT c.coffeeId, c.coffeeName, c.roaster, c.roast, c.process, c.notes,
                 COUNT(b.brewID) AS brewCount
          FROM tblCoffee c
-         LEFT JOIN tblBrew b ON b.coffeeType = c.coffeeName AND b.userID = c.userID
+         LEFT JOIN tblBrew b ON b.coffeeId = c.coffeeId
          WHERE c.userID = :uid
          GROUP BY c.coffeeId
-         ORDER BY c.coffeeName"
+         ORDER BY c.coffeeName'
     );
     $stmt->execute([':uid' => $_SESSION['userID']]);
     $coffees = $stmt->fetchAll();
 } catch (PDOException $e) {
     error_log($e->getMessage());
-    $_SESSION['errMessage'] = "Sorry, your coffee couldn't be saved.<br><a href='coffees.php'>Coffees</a>";
-    header("Location: errors.php");
+    $_SESSION['errMessage'] = "Sorry, your coffees couldn't be loaded.<br><a href='coffees.php'>Coffees</a>";
+    header('Location: errors.php');
     exit();
 }
 
@@ -73,7 +79,10 @@ $roastClass = ['Light' => 'light', 'Medium' => 'medium', 'Dark' => 'dark'];
     <title>Coffees</title>
 </head>
 <body>
-<?php $activePage = 'coffees'; require __DIR__ . '/includes/brewNav.php'; ?>
+<?php
+$activePage = 'coffees';
+require __DIR__ . '/includes/brewNav.php';
+?>
 
 <main>
     <div class="page-head">
@@ -82,14 +91,15 @@ $roastClass = ['Light' => 'light', 'Medium' => 'medium', 'Dark' => 'dark'];
     </div>
 
     <div class="bag-grid">
-        <?php foreach ($coffees as $c):
-
-            $class  = 'bag ' . ($roastClass[$c['roast']] ?? 'dark');
-            $brews  = (int)$c['brewCount'];
-            $warn   = $brews > 0
-                ? "Delete this coffee? Its $brews brew(s) stay in your history."
-                : "Delete this coffee?";
-        ?>
+        <?php foreach ($coffees as $c) : ?>
+            <?php
+            $class = 'bag ' . ($roastClass[$c['roast']] ?? 'dark');
+            $brews = (int) $c['brewCount'];
+            // deleting a coffee also deletes its brews (ON DELETE CASCADE), so say so
+            $warn = $brews > 0
+                ? "Delete this coffee? Its $brews brew(s) will be deleted too."
+                : 'Delete this coffee?';
+            ?>
         <article class="<?= $class ?>">
             <div class="bag-head">
                 <h2><?= e($c['coffeeName']) ?></h2>
@@ -102,14 +112,14 @@ $roastClass = ['Light' => 'light', 'Medium' => 'medium', 'Dark' => 'dark'];
                 <div><dt>Brews</dt><dd><?= $brews ?></dd></div>
             </dl>
 
-            <?php if ($c['notes'] !== '' && $c['notes'] !== null): ?>
+            <?php if ($c['notes'] !== '' && $c['notes'] !== null) : ?>
                 <p class="bag-notes" title="<?= e($c['notes']) ?>"><?= e($c['notes']) ?></p>
             <?php endif; ?>
 
             <div class="bag-actions">
                 <form method="post" action="delete/deleteCoffee.php"
-                      onsubmit="return confirm('<?= $warn ?>');">
-                    <input type="hidden" name="coffeeId" value="<?= (int)$c['coffeeId'] ?>">
+                      onsubmit="return confirm('<?= e($warn) ?>');">
+                    <input type="hidden" name="coffeeId" value="<?= (int) $c['coffeeId'] ?>">
                     <button type="submit" class="delete-btn">Delete</button>
                 </form>
             </div>
@@ -119,9 +129,9 @@ $roastClass = ['Light' => 'light', 'Medium' => 'medium', 'Dark' => 'dark'];
         <details class="bag-add" <?= (count($coffees) === 0 || $errors) ? 'open' : '' ?>>
             <summary>Add a coffee</summary>
 
-            <?php if ($errors): ?>
+            <?php if ($errors) : ?>
                 <div class="panel error"><ul>
-                        <?php foreach ($errors as $err): ?><li><?= e($err) ?></li><?php endforeach; ?>
+                        <?php foreach ($errors as $err) : ?><li><?= e($err) ?></li><?php endforeach; ?>
                     </ul></div>
             <?php endif; ?>
 

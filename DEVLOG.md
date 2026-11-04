@@ -88,6 +88,7 @@
 - [ ] Router and repositories (MVC), JSON API, async search
 - [ ] Docker (PHP 8.4), CI with PHPStan and PHP-CS-Fixer
 - [ ] README refresh, screenshots, demo video
+- [ ] Replace the browser `confirm()` popups (delete brew, delete coffee) with a styled in-page modal, using the native `<dialog>` element. It should keep the cascade warning on coffee delete.
 
 ## Next steps (in order)
 

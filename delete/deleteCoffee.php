@@ -7,22 +7,23 @@ requireLogin('../');
 
 // only accept POST with a valid id
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['coffeeId']) || !ctype_digit($_POST['coffeeId'])) {
-    header("Location:../coffees.php");
+    header('Location: ../coffees.php');
     exit();
 }
 
 try {
-    // userID in the WHERE means nobody can delete another user's coffee
-    $stmt = $pdo->prepare("DELETE FROM tblCoffee WHERE coffeeId = :id AND userID = :uid");
+    // userID in the WHERE means nobody can delete another user's coffee.
+    // ON DELETE CASCADE on tblBrew.coffeeId also deletes every brew logged with this coffee.
+    $stmt = $pdo->prepare('DELETE FROM tblCoffee WHERE coffeeId = :id AND userID = :uid');
     $stmt->execute([
-        ':id'  => (int)$_POST['coffeeId'],
+        ':id'  => (int) $_POST['coffeeId'],
         ':uid' => $_SESSION['userID'],
     ]);
-    header("Location:../coffees.php");
+    header('Location: ../coffees.php');
     exit();
 } catch (PDOException $e) {
     error_log($e->getMessage());
     $_SESSION['errMessage'] = "Error deleting coffee.<br><a href='coffees.php'>Back to coffees</a>";
-    header("Location:../errors.php");
+    header('Location: ../errors.php');
     exit();
 }
