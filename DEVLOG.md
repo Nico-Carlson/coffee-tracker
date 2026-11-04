@@ -81,7 +81,8 @@
 - [x] New/edit brew forms and brew history use `coffeeId` (history uses a JOIN)
 - [ ] Check `coffees.php`; update the delete confirm to warn about cascade
 - [ ] Drop `tblBrew.coffeeType`, and stop writing it in `newBrew`/`editBrew`
-- [ ] Regenerate `schema.sql`; add a seeder with demo data
+- [x] Regenerate `schema.sql`
+- [ ] add a seeder with demo data
 - [ ] Style pass on the remaining PHP files
 - [ ] CSRF tokens on POST forms
 - [ ] Metrics dashboard (ratio, flow rate, averages by roast and process)
@@ -106,6 +107,21 @@
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-03: Regenerate schema.sql (branch `regenerate-schema-sql`)
+
+- **Change:** `schema.sql` now matches the live database (including `coffeeId` on
+  `tblBrew`, no `coffeeType`, utf8mb4). Generated with:
+  `mysqldump -u nico -p --no-data --compact wp_miniSite tblUser tblCoffee tblBrew`
+  piped through `sed` to strip `AUTO_INCREMENT=` counters and the `/*!40101*/`
+  lines, and to add `IF NOT EXISTS`.
+- **Note:** `text` columns show as `mediumtext` because `CONVERT TO utf8mb4`
+  widens them. Column order is the live order (`userID` last), which is
+  cosmetic.
+- **Not tested:** loading `schema.sql` into a fresh database. The `nico` MySQL
+  user cannot create databases. Test it for real when Docker is set up.
+- **Still open:** looser types than ideal (`roast` is varchar not ENUM, some text
+  columns NOT NULL). Fix in a later migration if time allows.
 
 ### 2026-11-03: Schema cleanup (branch `schema-cleanup`)
 
