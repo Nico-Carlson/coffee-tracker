@@ -101,6 +101,19 @@
 
 ## Changelog
 
+### 2026-11-03: Drop brews.coffeeType (branch `brews-use-coffee-id`)
+
+- **Change:** `database/migrations/003_drop_brew_coffee_type.sql` drops
+  `tblBrew.coffeeType`. `newBrew.php` and `editBrew.php` no longer write it.
+  A repo-wide grep confirmed nothing else read it.
+- **Order matters:** the column was NOT NULL with no default, so the code had to
+  stop writing it and the migration had to run back to back, with no testing in
+  between.
+- **Tested by hand:** add brew, edit brew and change its coffee, existing brews
+  still show the right names.
+- **Still open:** `schema.sql` is out of date (still has `coffeeType`, lacks
+  `coffeeId`). Regenerate it from the live database.
+
 ### 2026-11-03: PHP pages use coffeeId (branch `brews-use-coffee-id`)
 
 - **Problem:** after the schema change, `coffeeId` is NOT NULL but the forms
@@ -125,8 +138,6 @@
   (JOINs). The Coffees delete confirm used to say a coffee's brews "stay in
   your history", which stopped being true after the cascade, so it now says the
   brews are deleted too. `delete/deleteCoffee.php` got style fixes and a comment.
-- **Still open:** `coffeeType` is still written and can now be dropped.
-  `schema.sql` still needs regenerating from the live database.
 
 ### 2026-11-03: Link brews to coffees (branch `link-brews-to-coffees`)
 
@@ -144,7 +155,5 @@
   matching coffee. After 001, 7 of 7 brews had a `coffeeId`. After 002,
   `information_schema` lists both `fk_brew_coffee` and `fk_brew_user`.
 - **Still open:**
-  - `coffeeType` still exists because the PHP pages read it. Next step is
-    switching the pages to `coffeeId`, then dropping the column.
   - The live database's column order differs from `schema.sql`, so
     `schema.sql` needs to be regenerated from the real database.
