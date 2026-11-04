@@ -2,64 +2,76 @@
 require __DIR__ . '/includes/db_connect.php';
 /** @var PDO $pdo */
 
-require __DIR__ . '/includes/auth.php'; requireLogin();
+require __DIR__ . '/includes/auth.php';
+requireLogin();
 
 try {
-    $st = $pdo->prepare("SELECT DISTINCT coffeeName FROM tblCoffee WHERE userID = :uid ORDER BY coffeeName");
+    $st = $pdo->prepare('SELECT coffeeId, coffeeName FROM tblCoffee WHERE userID = :uid ORDER BY coffeeName');
     $st->execute([':uid' => $_SESSION['userID']]);
-    $coffees = $st->fetchAll(PDO::FETCH_COLUMN);
+
+    // id => name, with ids forced to int so the strict check in readBrewInput() matches
+    $coffeeNames = [];
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $coffeeNames[(int) $row['coffeeId']] = $row['coffeeName'];
+    }
 
     $errors = [];
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         $id = $_POST['brewID'] ?? '';
-        if (!ctype_digit($id)) { header("Location:brewHistory.php"); exit(); }
+        if (!ctype_digit($id)) {
+            header('Location: brewHistory.php');
+            exit();
+        }
 
-        [$data, $errors] = readBrewInput($coffees);
+        [$data, $errors] = readBrewInput(array_keys($coffeeNames));
         if (!$errors) {
+            // coffeeType is still written (from the coffee's name) because other pages
+            // read it. Remove it when those pages switch to coffeeId.
             $stmt = $pdo->prepare(
-                    "UPDATE tblBrew SET coffeeType = :coffeeType, coffeeGrams = :coffeeGrams, waterGrams = :waterGrams,
-                        brewDate = :brewDate, waterTemp = :waterTemp, grindSize = :grindSize,
-                        bloomTime = :bloomTime, totalSeconds = :totalSeconds, rating = :rating, brewNotes = :brewNotes
-                 WHERE brewID = :id AND userID = :uid"
+                'UPDATE tblBrew SET coffeeId = :coffeeId, coffeeType = :coffeeType, coffeeGrams = :coffeeGrams,
+                        waterGrams = :waterGrams, brewDate = :brewDate, waterTemp = :waterTemp,
+                        grindSize = :grindSize, bloomTime = :bloomTime, totalSeconds = :totalSeconds,
+                        rating = :rating, brewNotes = :brewNotes
+                 WHERE brewID = :id AND userID = :uid'
             );
-            $stmt->execute($data + [':id' => (int)$id, ':uid' => $_SESSION['userID']]);
-            header("Location:brewHistory.php");
+            $stmt->execute($data + [
+                ':coffeeType' => $coffeeNames[$data[':coffeeId']],
+                ':id'         => (int) $id,
+                ':uid'        => $_SESSION['userID'],
+            ]);
+            header('Location: brewHistory.php');
             exit();
         }
     }
 
     // ---------- LOAD: id comes from the Edit button (POST) or a link (GET) ----------
     $id = $_POST['brewID'] ?? $_GET['id'] ?? '';
-    if (!ctype_digit((string)$id)) {
-        header("Location:brewHistory.php");
+    if (!ctype_digit((string) $id)) {
+        header('Location: brewHistory.php');
         exit();
     }
 
-    $stmt = $pdo->prepare("SELECT * FROM tblBrew WHERE brewID = :id AND userID = :uid");
-    $stmt->execute([':id' => (int)$id, ':uid' => $_SESSION['userID']]);
+    $stmt = $pdo->prepare('SELECT * FROM tblBrew WHERE brewID = :id AND userID = :uid');
+    $stmt->execute([':id' => (int) $id, ':uid' => $_SESSION['userID']]);
     $brew = $stmt->fetch();
     if (!$brew) {
-        header("Location:brewHistory.php");
+        header('Location: brewHistory.php');
         exit();
     }
 
-    if ($errors) $brew = array_merge($brew, $_POST);
+    if ($errors) {
+        $brew = array_merge($brew, $_POST);
+    }
     $timeValue = $errors ? ($_POST['totalTime'] ?? '') : formatBrewTime($brew['totalSeconds']);
 } catch (PDOException $e) {
     error_log($e->getMessage());
     $_SESSION['errMessage'] = "Error editing brew.<br><a href='brewHistory.php'>Back to history</a>";
-    header("Location:errors.php");
+    header('Location: errors.php');
     exit();
 }
 
-$grinds  = ['Fine', 'Medium-fine', 'Medium', 'Medium-coarse', 'Coarse'];
-// helper to render <option>s with the saved one selected
-function options(array $list, $current) {
-    foreach ($list as $o) {
-        $v = htmlspecialchars($o, ENT_QUOTES);
-        echo "<option value=\"$v\"" . ($o === $current ? ' selected' : '') . ">$v</option>";
-    }
-}
+$grinds = ['Fine', 'Medium-fine', 'Medium', 'Medium-coarse', 'Coarse'];
+$selectedCoffeeId = (int) $brew['coffeeId'];
 ?>
 <!doctype html>
 <html lang="en">
@@ -70,7 +82,10 @@ function options(array $list, $current) {
     <title>Edit Brew</title>
 </head>
 <body>
-<?php $activePage = 'history'; require __DIR__ . '/includes/brewNav.php'; ?>
+<?php
+$activePage = 'history';
+require __DIR__ . '/includes/brewNav.php';
+?>
 
 <main>
     <div class="page-head">
@@ -79,21 +94,23 @@ function options(array $list, $current) {
     </div>
 
 
-    <?php if ($errors): ?>
+    <?php if ($errors) : ?>
         <div class="panel error"><ul>
-                <?php foreach ($errors as $err): ?><li><?= e($err) ?></li><?php endforeach; ?>
+                <?php foreach ($errors as $err) : ?><li><?= e($err) ?></li><?php endforeach; ?>
             </ul></div>
     <?php endif; ?>
 
     <form class="panel" action="editBrew.php" method="POST">
-        <input type="hidden" name="brewID" value="<?= (int)$brew['brewID'] ?>">
+        <input type="hidden" name="brewID" value="<?= (int) $brew['brewID'] ?>">
         <input type="hidden" name="save" value="1">
 
         <div class="form-grid">
             <div class="field">
-                <label for="coffeeType">Coffee</label>
-                <select id="coffeeType" name="coffeeType">
-                    <?php options($coffees, $brew['coffeeType']); ?>
+                <label for="coffeeId">Coffee</label>
+                <select id="coffeeId" name="coffeeId">
+                    <?php foreach ($coffeeNames as $cid => $cname) : ?>
+                        <option value="<?= e($cid) ?>" <?= $selectedCoffeeId === $cid ? 'selected' : '' ?>><?= e($cname) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="field">
@@ -114,7 +131,11 @@ function options(array $list, $current) {
             </div>
             <div class="field">
                 <label for="grindSize">Grind size</label>
-                <select id="grindSize" name="grindSize"><?php options($grinds, $brew['grindSize']); ?></select>
+                <select id="grindSize" name="grindSize">
+                    <?php foreach ($grinds as $g) : ?>
+                        <option value="<?= e($g) ?>" <?= $g === $brew['grindSize'] ? 'selected' : '' ?>><?= e($g) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="field">
                 <label for="bloomTime">Bloom time (seconds)</label>
@@ -122,13 +143,14 @@ function options(array $list, $current) {
             </div>
             <div class="field">
                 <label for="totalTime">Total brew time</label>
-                <input type="text" id="totalTime" name="totalTime" value="<?= e($timeValue) ?>">                <span class="hint">Minutes and seconds</span>
+                <input type="text" id="totalTime" name="totalTime" value="<?= e($timeValue) ?>">
+                <span class="hint">Minutes and seconds</span>
             </div>
             <div class="field">
                 <label for="rating">Rating</label>
                 <select id="rating" name="rating">
-                    <?php foreach ([5, 4, 3, 2, 1] as $r): ?>
-                        <option value="<?= $r ?>" <?= (int)$brew['rating'] === $r ? 'selected' : '' ?>><?= $r ?> / 5</option>
+                    <?php foreach ([5, 4, 3, 2, 1] as $r) : ?>
+                        <option value="<?= $r ?>" <?= (int) $brew['rating'] === $r ? 'selected' : '' ?>><?= $r ?> / 5</option>
                     <?php endforeach; ?>
                 </select>
             </div>
