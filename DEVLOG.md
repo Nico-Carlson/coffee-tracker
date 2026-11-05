@@ -106,7 +106,7 @@
 - Push main and tags after each merge; run git fetch before starting work, since GitHub’s web interface can add commits.
 - PHP-CS-Fixer config is .php-cs-fixer.dist.php at the repo root (@PSR12); always dry-run (--dry-run --diff) before fixing, because templates mix PHP and HTML.
 
-## Demo talking points (for the 2-minute video) <- new
+## Demo talking points (for the 2-minute video)
 
 - Normalized relational model: brews reference coffees by foreign key, with
   `ON DELETE CASCADE`; the history page and brew counts use JOINs.
@@ -117,6 +117,7 @@
 - Found and fixed a real bug during the refactor: the delete-coffee warning
   claimed brews would stay, which stopped being true after the cascade.
 - Honest "next" list: Docker with a pinned PHP, CI, metrics dashboard, API.
+- Metrics computed in SQL (aggregates, GROUP BY, JOIN) with a whitelisted date filter.
 
 ## Status
 
@@ -132,35 +133,64 @@
 - [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
       cascade warning on coffee delete)
 - [ ] `declare(strict_types=1)` after checking callers (PDO ints vs `?int` params)
-- [ ] Metrics dashboard (brew ratio, flow rate, averages by roast/process/coffee)
+- [x] Metrics dashboard: KPI cards, by roast, by coffee, date range filter
+      (by process and charts not done)
 - [ ] Router and repositories (MVC), JSON API, async search
 - [ ] Docker (PHP 8.4 pinned) + clean-install test of `schema.sql`; CI with
       PHPStan and PHP-CS-Fixer
 - [ ] README refresh and new screenshots (`docs/screenshots` are from before
       the refactor); demo video
 
-## Future features <- (keep the section added earlier)
+## Future features
 
 - Change the favicon to a coffee-themed icon.
 - Transition to a mobile app (the JSON API is the first step).
 - Optional schema tightening: `roast` as ENUM, drop NOT NULL on optional text
   columns, add `createdAt`/`brewDate` precision if the dashboard needs it.
+- Sortable table columns on the metrics page (click a header to toggle). Do it
+  server-side with `?sort=` and `?dir=` mapped through a whitelist array to a
+  fixed `ORDER BY` fragment, since column names cannot be bound parameters.
+- Optional: fix or delete the early test brews with implausible `totalSeconds`.
 
-## Next steps (in order) <- replace
+## Next steps (in order)
 
-1. Seeder. Design: CLI script that creates a `demo` user, about 12 coffees
-   across 10+ roasters and about 60 brews over the last 3 months, all inside one
-   PDO transaction, re-runnable (delete the demo user first; cascades clean up).
-   Needs the password storage method: run
-   `grep -n "password" newUser.php login.php` and check for
-   `password_hash`/`password_verify`.
-2. Review the files listed in Status for lint and security, one at a time.
-3. Metrics queries and dashboard.
-4. Docker, then CI, then (if time) router/repositories and the API.
+1. Review the files listed in Status for lint and security, one at a time.
+2. Metrics queries and dashboard.
+3. Docker, then CI, then (if time) router/repositories and the API.
 
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-05: Metrics dashboard (branch `metrics-dashboard`)
+
+- **Change:** new `metrics.php` with a date range filter (30 days, 90 days, all
+  time), four KPI cards (brews, avg rating, avg ratio, avg flow), a "By roast"
+  table and a "By coffee" table. Aggregation is done in SQL (`COUNT`, `AVG`,
+  `GROUP BY`, JOIN `tblBrew` to `tblCoffee`), scoped by `userID` like every
+  other query. Metrics link added to `includes/brewNav.php`.
+- **Definitions:** ratio = `waterGrams / coffeeGrams` (shown as 1:x). Flow rate =
+  `waterGrams / totalSeconds` in g/s, bloom included. Both use `NULLIF` for
+  zero divisors, and `AVG` skips NULL `waterGrams`.
+- **Range filter:** `$_GET['range']` is checked against a whitelist array and
+  falls back to 30. "All time" uses `1970-01-01` as the since-date, because
+  `EMULATE_PREPARES => false` does not allow the same named parameter twice in
+  one query (so no `:since IS NULL OR ...`).
+- **Checked against the seeded data:** all-time roast counts 25/8/27 and ratings
+  match the seeder entry; by-coffee brew counts sum to 60.
+- **Empty state:** both tables show "No brews in this range."; KPI cards show
+  dashes for averages.
+- **Gotchas:**
+  - PHP turns numeric array keys like `'30'` into ints, so comparing with
+    `$range` needs a `(string)` cast.
+  - Averages over 1 or 2 brews are noisy (Sumatra: 4.00 from one brew), so the
+    Brews column stays next to the rating.
+  - Early test users (6 and 8) have `totalSeconds` of 25000 to 31000. My guess
+    is an old version stored times with the colon removed. `parseBrewTime()` is
+    correct. Left alone, since the dashboard only shows the logged-in user.
+  - One commit rewrote `assets/coffee.css` wholesale (716 changed lines): an
+    editor formatter on save. Content is fine, the diff is just noisy.
+- **Still open:** no "by process" breakdown, no chart, no sortable columns.
 
 ### 2026-11-05: Demo-data seeder (branch `demo-seeder`)
 

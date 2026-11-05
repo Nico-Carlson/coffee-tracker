@@ -17,6 +17,7 @@ $activePage = $activePage ?? '';
         <a href="brewHistory.php" <?= $activePage === 'history' ? 'aria-current="page"' : '' ?>>Brew history</a>
         <a href="newBrew.php" <?= $activePage === 'new' ? 'aria-current="page"' : '' ?>>New brew</a>
         <a href="coffees.php" <?= $activePage === 'coffees' ? 'aria-current="page"' : '' ?>>Coffees</a>
+        <a href="metrics.php" <?= $activePage === 'metrics' ? 'aria-current="page"' : '' ?>>Metrics</a>
     </div>
 
     <div class="brew-side">
