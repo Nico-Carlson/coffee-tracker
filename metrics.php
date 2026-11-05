@@ -41,6 +41,20 @@ try {
     $rs->execute([':uid' => $_SESSION['userID'], ':since' => $since]);
     $kpi = $rs->fetch();
 
+    $rs = $pdo->prepare(
+        'SELECT c.coffeeName, c.roaster, c.roast,
+                COUNT(*) AS brews,
+                ROUND(AVG(b.rating), 2) AS avgRating,
+                ROUND(AVG(b.waterGrams / NULLIF(b.coffeeGrams, 0)), 2) AS avgRatio,
+                ROUND(AVG(b.waterGrams / NULLIF(b.totalSeconds, 0)), 2) AS avgFlow
+         FROM tblBrew b
+         JOIN tblCoffee c ON c.coffeeId = b.coffeeId
+         WHERE b.userID = :uid AND b.brewDate >= :since
+         GROUP BY c.coffeeId, c.coffeeName, c.roaster, c.roast
+         ORDER BY avgRating DESC, brews DESC, c.coffeeName'
+    );
+    $rs->execute([':uid' => $_SESSION['userID'], ':since' => $since]);
+    $byCoffee = $rs->fetchAll();
 } catch (PDOException $e) {
     error_log($e->getMessage());
     $_SESSION['errMessage'] = "Couldn't load your metrics.";
@@ -94,6 +108,7 @@ require __DIR__ . '/includes/brewNav.php';
     <?php endforeach; ?>
 </div>
 
+<h2 class="section-title">By roast</h2>
 <div class="table-wrap">
     <table>
         <thead>
@@ -116,6 +131,37 @@ require __DIR__ . '/includes/brewNav.php';
         </tbody>
     </table>
 </div>
+
+<h2 class="section-title">By coffee</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Coffee</th>
+                <th>Roaster</th>
+                <th>Roast</th>
+                <th>Brews</th>
+                <th>Avg rating</th>
+                <th>Avg ratio</th>
+                <th>Avg flow</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($byCoffee as $row) : ?>
+                <tr>
+                    <td class="coffee-name"><?= e($row['coffeeName']) ?></td>
+                    <td><?= e($row['roaster']) ?></td>
+                    <td><?= e($row['roast']) ?></td>
+                    <td><?= (int) $row['brews'] ?></td>
+                    <td><?= e((string) $row['avgRating']) ?> / 5</td>
+                    <td><?= $row['avgRatio'] !== null ? '1:' . e((string) $row['avgRatio']) : '—' ?></td>
+                    <td><?= $row['avgFlow'] !== null ? e((string) $row['avgFlow']) . ' g/s' : '—' ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+      
 </main>
 </body>
 </html>

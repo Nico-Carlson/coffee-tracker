@@ -215,6 +215,10 @@ h2 {
   font-size: 0.9rem;
 }
 
+.section-title {
+  margin: 28px 0 12px;
+}
+
 /* ---------- tables (brew history) ---------- */
 .table-wrap {
   overflow-x: auto;
