@@ -25,10 +25,22 @@ try {
          JOIN tblCoffee c ON c.coffeeId = b.coffeeId
          WHERE b.userID = :uid AND b.brewDate >= :since
          GROUP BY c.roast
-         ORDER BY avgRating DESC'
+         ORDER BY COUNT(*) DESC'
     );
     $rs->execute([':uid' => $_SESSION['userID'], ':since' => $since]);
     $byRoast = $rs->fetchAll();
+
+    $rs = $pdo->prepare(
+        'SELECT COUNT(*) AS brews,
+                ROUND(AVG(rating), 2) AS avgRating,
+                ROUND(AVG(waterGrams / NULLIF(coffeeGrams, 0)), 2) AS avgRatio,
+                ROUND(AVG(waterGrams / NULLIF(totalSeconds, 0)), 2) AS avgFlow
+         FROM tblBrew
+         WHERE userID = :uid AND brewDate >= :since'
+    );
+    $rs->execute([':uid' => $_SESSION['userID'], ':since' => $since]);
+    $kpi = $rs->fetch();
+
 } catch (PDOException $e) {
     error_log($e->getMessage());
     $_SESSION['errMessage'] = "Couldn't load your metrics.";
@@ -54,6 +66,25 @@ require __DIR__ . '/includes/brewNav.php';
     <div class="page-head">
     <h1>Metrics</h1>
     <p><?= e($ranges[$range]) ?></p>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi">
+        <span class="kpi-value"><?= (int) $kpi['brews'] ?></span>
+        <span class="kpi-label">Brews</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi-value"><?= $kpi['avgRating'] !== null ? e((string) $kpi['avgRating']) . ' / 5' : '—' ?></span>
+        <span class="kpi-label">Avg rating</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi-value"><?= $kpi['avgRatio'] !== null ? '1:' . e((string) $kpi['avgRatio']) : '—' ?></span>
+        <span class="kpi-label">Avg ratio</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi-value"><?= $kpi['avgFlow'] !== null ? e((string) $kpi['avgFlow']) . ' g/s' : '—' ?></span>
+        <span class="kpi-label">Avg flow rate</span>
+    </div>
 </div>
 
 <div class="range-filter">

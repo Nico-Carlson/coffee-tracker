@@ -185,6 +185,36 @@ h2 {
   margin-bottom: 18px;
 }
 
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-top: 6px solid var(--crema);
+  border-radius: 6px 6px 14px 14px;
+  background: var(--paper);
+}
+
+.kpi-value {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.kpi-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 /* ---------- tables (brew history) ---------- */
 .table-wrap {
   overflow-x: auto;
