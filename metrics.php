@@ -120,6 +120,9 @@ require __DIR__ . '/includes/brewNav.php';
             </tr>
         </thead>
         <tbody>
+          <?php if (!$byRoast) : ?>
+            <tn><td colspan="4" class="empty">No brews in this range.</td></tr>
+          <?php endif; ?>
             <?php foreach ($byRoast as $row) : ?>
                 <tr>
                     <td><?= e($row['roast']) ?></td>
@@ -147,6 +150,9 @@ require __DIR__ . '/includes/brewNav.php';
             </tr>
         </thead>
         <tbody>
+          <?php if (!$byCoffee) : ?>
+              <tr><td colspan="7" class="empty">No coffees in this range.</td></tr>
+          <?php endif; ?>
             <?php foreach ($byCoffee as $row) : ?>
                 <tr>
                     <td class="coffee-name"><?= e($row['coffeeName']) ?></td>
