@@ -2,44 +2,42 @@
 // require the connection file
 require __DIR__ . '/includes/db_connect.php';
 /** @var PDO $pdo */
-/**
- * @return string
- * @var string $dbStatus
- */
 
 // if the POST is set already send the user's login info to the db
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = post('username');
-    $password = $_POST['password'] ?? '';   // never trim passwords
+    $password = $_POST['password'] ?? '';
+    if (!is_string($password)) {
+        $password = '';
+    }
 
-    $stmt = $pdo->prepare("SELECT userID, username, password FROM tblUser WHERE username = :username");
+    $stmt = $pdo->prepare('SELECT userID, username, password FROM tblUser WHERE username = :username');
     $stmt->execute([':username' => $username]);
     $user = $stmt->fetch();
 
     if ($user && password_verify($password, $user['password'])) {
         session_regenerate_id(true);
         $_SESSION['loginStatus'] = true;
-        $_SESSION['userID']      = (int)$user['userID'];
+        $_SESSION['userID']      = (int) $user['userID'];
         $_SESSION['username']    = $user['username'];
-        header("Location: coffees.php");
+        header('Location: coffees.php');
         exit();
     }
 
     $_SESSION['loginStatus'] = false;
     $_SESSION['errMessage'] = '<h3>Bad Login... Please try again or make a new user</h3>
         <nav><a href="login.php">Login</a> <a href="newUser.php">New User</a></nav>';
-    header("Location: errors.php");
+    header('Location: errors.php');
     exit();
-}?>
+}
+?>
 
 <!--show the sign in if POST isnt set -->
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="assets/coffee.css">
     <title>Login</title>
 </head>
@@ -80,15 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     </table>
 </form>
-
+</main>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
