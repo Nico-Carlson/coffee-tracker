@@ -20,7 +20,7 @@ try {
         'SELECT c.roast,
                 COUNT(*) AS brews,
                 ROUND(AVG(b.rating), 2) AS avgRating,
-                ROUND(AVG(b.waterGrams / NULLIF(b.coffeeGrams, 0)), 2) AS avgRatio
+                ROUND(AVG(b.waterGrams / NULLIF(b.coffeeGrams, 0)), 1) AS avgRatio
          FROM tblBrew b
          JOIN tblCoffee c ON c.coffeeId = b.coffeeId
          WHERE b.userID = :uid AND b.brewDate >= :since
@@ -51,7 +51,40 @@ require __DIR__ . '/includes/brewNav.php';
 ?>
 
 <main>
-  <pre><?= e(print_r($byRoast, true)) ?></pre>
+    <div class="page-head">
+    <h1>Metrics</h1>
+    <p><?= e($ranges[$range]) ?></p>
+</div>
+
+<div class="range-filter">
+    <?php foreach ($ranges as $key => $label) : ?>
+        <a class="btn" href="metrics.php?range=<?= e((string) $key) ?>"
+           <?= (string) $key === $range ? 'aria-current="page"' : '' ?>><?= e($label) ?></a>
+    <?php endforeach; ?>
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Roast</th>
+                <th>Brews</th>
+                <th>Avg rating</th>
+                <th>Avg ratio</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($byRoast as $row) : ?>
+                <tr>
+                    <td><?= e($row['roast']) ?></td>
+                    <td><?= (int) $row['brews'] ?></td>
+                    <td><?= e($row['avgRating']) ?> / 5</td>
+                    <td>1:<?= e($row['avgRatio']) ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
 </main>
 </body>
 </html>
