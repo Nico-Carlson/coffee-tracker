@@ -126,8 +126,8 @@
 - [x] Tables on utf8mb4; PDO connection on utf8mb4 with explicit options
 - [x] `schema.sql` regenerated from the live database
 - [x] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
-- [ ] Style/security review of files not yet touched: `auth.php`, `login.php`,
-      `newUser.php`, `logout.php`, `index.php`, `errors.php`, `delete/deleteBrew.php`,
+- [ ] Style/security review: done `auth.php`, `login.php`, `newUser.php`; left:
+      `logout.php`, `index.php`, `errors.php`, `delete/deleteBrew.php`,
       `includes/brewNav.php`, `includes/signInNav.php`
 - [ ] CSRF tokens on POST forms
 - [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
@@ -161,6 +161,34 @@
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-05: Style/security review, part 1 (branch `review-untouched-files`)
+
+- **Reviewed so far:** `auth.php`, `login.php`, `newUser.php`.
+- **auth.php:** PSR-12 brace placement, single-quoted `Location:` header.
+  No security change. Note: `requireLogin()` relies on `db_connect.php` having
+  started the session, so it must be required first.
+- **login.php:** removed stray docblock, added `is_string()` guard on the
+  password (a posted `password[]` made `password_verify()` throw a TypeError),
+  single quotes, `(int)` cast spacing, closing `</main>`, and the viewport tag
+  no longer blocks pinch zoom. Already correct: prepared query, bcrypt verify,
+  `session_regenerate_id(true)`, same error for bad user or bad password.
+- **newUser.php:** same `is_string()` guard, password length now 8 to 72
+  (bcrypt ignores bytes past 72), SQLSTATE compared as the string `'23000'`,
+  `echo` HTML block replaced by plain HTML with `e()` and the `.error` class,
+  nav moved inside `<main class="center">`.
+- **Gotcha:** a half-applied edit left an old block and a dangling `echo('`
+  in `newUser.php`; `/opt/lampp/bin/php -l newUser.php` caught it. Run `php -l`
+  after every large edit.
+- **Not done (known gaps, good "next" talking points):** no login rate
+  limiting, unknown usernames respond slightly faster than wrong passwords,
+  no CSRF tokens yet.
+- **Still to review:** `logout.php`, `index.php`, `errors.php`,
+  `delete/deleteBrew.php`, `includes/brewNav.php`, `includes/signInNav.php`.
+  Also check that `index.php` shows the `error=falseLoginStatus` message and
+  that `errors.php` echoes `errMessage` as intended.
+- **Unconfirmed:** the four browser tests for `newUser.php` (signup, duplicate,
+  short password, form loads) were not reported as run.
 
 ### 2026-11-05: Metrics dashboard (branch `metrics-dashboard`)
 
