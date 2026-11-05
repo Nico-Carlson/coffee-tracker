@@ -82,7 +82,7 @@
   before the code that uses it works (this was done once: `main` briefly had
   a NOT NULL column the forms did not fill).
 
-## Workflow notes <- new
+## Workflow notes
 
 - Shell is fish: quote globs (`--include="*.php"`). Editor is LazyVim (nvim) and
   flags PSR-12 style issues; fix them.
@@ -103,6 +103,8 @@
 - phpMyAdmin: `DATABASE()` can be `information_schema`, so filter by
   `TABLE_NAME LIKE 'tbl%'`. `SHOW CREATE TABLE` output is truncated; use
   `information_schema` queries instead.
+- Push main and tags after each merge; run git fetch before starting work, since GitHub’s web interface can add commits.
+- PHP-CS-Fixer config is .php-cs-fixer.dist.php at the repo root (@PSR12); always dry-run (--dry-run --diff) before fixing, because templates mix PHP and HTML.
 
 ## Demo talking points (for the 2-minute video) <- new
 
@@ -122,7 +124,7 @@
 - [x] New/edit brew, brew history and coffees pages use `coffeeId` (JOINs)
 - [x] Tables on utf8mb4; PDO connection on utf8mb4 with explicit options
 - [x] `schema.sql` regenerated from the live database
-- [ ] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
+- [x] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
 - [ ] Style/security review of files not yet touched: `auth.php`, `login.php`,
       `newUser.php`, `logout.php`, `index.php`, `errors.php`, `delete/deleteBrew.php`,
       `includes/brewNav.php`, `includes/signInNav.php`
@@ -159,6 +161,25 @@
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-05: Demo-data seeder (branch `demo-seeder`)
+
+- **Change:** `database/seeds/DemoSeeder.php` creates a `demo` user (password
+  `demo-password-123`, hashed with bcrypt cost 12 like `newUser.php`), 12
+  coffees from 11 roasters, and 60 brews over the last 90 days.
+- **Run:** `/opt/lampp/bin/php database/seeds/DemoSeeder.php` from the repo root.
+  CLI only (it exits when run through a web server).
+- **Design:** one PDO transaction, so it is all-or-nothing. Re-runnable: it
+  deletes the old `demo` user first and the `ON DELETE CASCADE` foreign keys
+  remove that user's coffees and brews. `mt_srand(2026)` makes the data
+  identical on every run, so screenshots and the video stay reproducible.
+  Ratings, grind, water temperature and notes follow the coffee's roast, so
+  the dashboard has real differences to show.
+- **Check:** average rating by roast on the seeded data was Light 4.16 (25
+  brews), Medium 3.59 (27), Dark 3.88 (8). The small Dark sample explains why
+  it is above Medium.
+- **Note:** `userID` keeps increasing on each run (AUTO_INCREMENT), which is
+  harmless. The demo password is a local development credential only.
 
 ### 2026-11-03: Regenerate schema.sql (branch `regenerate-schema-sql`)
 
