@@ -187,8 +187,8 @@
   `delete/deleteBrew.php`, `includes/brewNav.php`, `includes/signInNav.php`.
   Also check that `index.php` shows the `error=falseLoginStatus` message and
   that `errors.php` echoes `errMessage` as intended.
-- **Unconfirmed:** the four browser tests for `newUser.php` (signup, duplicate,
-  short password, form loads) were not reported as run.
+- **Tested by hand:** the four browser tests for `newUser.php` (signup, duplicate,
+  short password, form loads) passed, and `php -l` is clean.
 
 ### 2026-11-05: Metrics dashboard (branch `metrics-dashboard`)
 
