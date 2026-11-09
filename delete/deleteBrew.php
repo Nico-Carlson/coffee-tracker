@@ -13,6 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !is_string($brewID) || !ctype_digit
     exit();
 }
 
+if (!csrfValid()) {
+    $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='brewHistory.php'>Back to history</a>";
+    header('Location: ../errors.php');
+    exit();
+}
+
 try {
     $stmt = $pdo->prepare('DELETE FROM tblBrew WHERE brewID = :id AND userID = :uid');
     $stmt->execute([':id' => (int) $brewID, ':uid' => $_SESSION['userID']]);

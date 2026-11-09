@@ -75,6 +75,7 @@ require __DIR__ . '/includes/brewNav.php';
                             <form method="post" action="delete/deleteBrew.php"
                                   onsubmit="return confirm('Delete this brew?');">
                                 <input type="hidden" name="brewID" value="<?= (int) $row['brewID'] ?>">
+                                <?= csrfField() ?>
                                 <button type="submit" class="delete-btn">Delete</button>
                             </form>
                             <form method="post" action="editBrew.php">
