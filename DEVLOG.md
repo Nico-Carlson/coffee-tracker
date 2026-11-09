@@ -127,7 +127,7 @@
 - [x] `schema.sql` regenerated from the live database
 - [x] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
 - [x] Style/security review: all files reviewed (see the 2026-11-09 entry)
-- [ ] CSRF tokens on POST forms
+- [ ] CSRF tokens on POST forms (branch `csrf-tokens`, in progress): helpers and both delete forms done; see the 2026-11-09 CSRF entry for what is left
 - [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
       cascade warning on coffee delete)
 - [ ] `declare(strict_types=1)` after checking callers (PDO ints vs `?int` params)
@@ -159,6 +159,44 @@
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-09: CSRF tokens, part 1 (branch `csrf-tokens`, not merged yet)
+
+- **Why:** the delete handlers pass every existing check (POST only, logged in,
+  `userID` scoped) when another site auto-submits a hidden form with the user's
+  session cookie. Tokens prove the user actually loaded our form.
+- **Helpers** in `includes/helpers.php`: `csrfToken()` (one random token per
+  session, `bin2hex(random_bytes(32))`), `csrfField()` (hidden input, goes in
+  every POST form) and `csrfValid()` (`is_string()` guard, then
+  `hash_equals()`, so a posted `csrfToken[]` cannot throw).
+- **Wired so far:** the delete forms in `brewHistory.php` and `coffees.php`, and
+  the matching checks in `delete/deleteBrew.php` and `delete/deleteCoffee.php`.
+  A failed check sets `errMessage` ("Your form expired...") and redirects to
+  `errors.php`. The check goes after the POST/id guard and before the `try`.
+- **Tested by hand:** both deletes work normally; editing the hidden
+  `csrfToken` value to `bad` in dev tools lands on the error page and nothing
+  is deleted.
+- **Not done yet, in this order:**
+  1. Add-coffee form and POST branch in `coffees.php`.
+  2. `newBrew.php`.
+  3. `editBrew.php`. Guess, check the file first: it probably takes a POST from
+     the Edit button in `brewHistory.php` to load the brew and a POST to save
+     it. The save needs a token; the Edit button form in `brewHistory.php` may
+     need one too, depending on how the page tells the two apart.
+  4. `login.php` and `newUser.php`. These need tokens as well ("login CSRF"),
+     even though nobody is logged in. The session already exists from
+     `db_connect.php`.
+  5. Logout: change the link in both nav files to a small POST form with a
+     token, and make `logout.php` check it. Closes the logout-by-GET gap.
+  6. Optional second layer: set `SameSite=Lax` explicitly where the session
+     starts (`includes/db_connect.php` line 22, before `session_start()`).
+  7. Final check: grep every `method="post"` and `method="POST"` form against
+     `csrfField` so none are missed. Then merge with `--no-ff` and tag.
+- **Talking point:** tokens plus `SameSite` cookies is defense in depth, since
+  modern browsers already default session cookies to `Lax` but tokens do not
+  depend on browser behavior.
+- **Gotcha:** the token must be in the form of any `<dialog>` modal later, so
+  the modal work comes after this.
 
 ### 2026-11-09: Style/security review, part 2 (branch `review-untouched-files`)
 
