@@ -1,8 +1,9 @@
 <?php
+
 /*
  * brew section navbar
  * set $activePage before requiring this file:
- *   $activePage = 'history' | 'new' | 'coffees';
+ *   $activePage = 'history' | 'new' | 'coffees' | 'metrics';
  *   require __DIR__ . '/includes/brewNav.php';
  *
  * NOTE: links are relative to the PAGE being viewed (not to this file),
