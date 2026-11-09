@@ -25,8 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $_SESSION['loginStatus'] = false;
-    $_SESSION['errMessage'] = '<h3>Bad Login... Please try again or make a new user</h3>
-        <nav><a href="login.php">Login</a> <a href="newUser.php">New User</a></nav>';
+    $_SESSION['errMessage'] = '<h3>Bad Login... Please try again or make a new user</h3>';
     header('Location: errors.php');
     exit();
 }

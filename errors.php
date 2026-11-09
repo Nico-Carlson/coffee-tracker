@@ -18,6 +18,13 @@ unset($_SESSION['errMessage']);
 </head>
 <body>
 <main>
+    <?php
+    if (!empty($_SESSION['loginStatus'])) {
+        require __DIR__ . '/includes/brewNav.php';
+    } else {
+        require __DIR__ . '/includes/signInNav.php';
+    }
+?>
     <div class="page-head">
         <h1>Errors</h1>
     </div>
