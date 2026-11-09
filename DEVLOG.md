@@ -90,9 +90,9 @@
   `/opt/lampp/bin/mysql`, `/opt/lampp/bin/php`. The MySQL user in
   `db_connect.php` cannot CREATE DATABASE, so a scratch database for testing a
   restore is not possible until Docker.
-- `includes/db_connect.php` holds real credentials and is meant to be
-  git-ignored; `db_connect.example.php` is the tracked template. Not yet
-  confirmed with `git check-ignore includes/db_connect.php`: do that first.
+- `includes/db_connect.php` holds real credentials. Confirmed 2026-11-09: it is
+  git-ignored (`.gitignore` line 2), not tracked, and never appeared in history
+  (`git log --all -- includes/db_connect.php` is empty).
 - Git: one descriptive branch per piece of work; commit after each working
   step; merge with `git merge --no-ff -m "<message>" <branch>`; tag
   milestones before deleting the branch. Tags so far:
@@ -186,7 +186,7 @@
   Logout and Coffees links; cosmetic).
 - **Known gaps:** no CSRF tokens (matters most for the delete handlers), no
   login rate limiting, logout via GET.
-- **Still unconfirmed:** `git check-ignore includes/db_connect.php`.
+- **Merged and tagged:** `style-security-review`.
 
 ### 2026-11-05: Style/security review, part 1 (branch `review-untouched-files`)
 
