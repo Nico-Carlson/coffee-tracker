@@ -126,9 +126,7 @@
 - [x] Tables on utf8mb4; PDO connection on utf8mb4 with explicit options
 - [x] `schema.sql` regenerated from the live database
 - [x] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
-- [ ] Style/security review: done `auth.php`, `login.php`, `newUser.php`; left:
-      `logout.php`, `index.php`, `errors.php`, `delete/deleteBrew.php`,
-      `includes/brewNav.php`, `includes/signInNav.php`
+- [x] Style/security review: all files reviewed (see the 2026-11-09 entry)
 - [ ] CSRF tokens on POST forms
 - [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
       cascade warning on coffee delete)
@@ -161,6 +159,34 @@
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-09: Style/security review, part 2 (branch `review-untouched-files`)
+
+- **Reviewed:** `logout.php`, `index.php`, `errors.php`, `delete/deleteBrew.php`,
+  `includes/brewNav.php`, `includes/signInNav.php`. This finishes the review.
+- **logout.php:** also clears the session cookie after `session_destroy()`.
+  Logout is still a GET, so it can be triggered cross-site (nuisance only);
+  becomes a POST form with the CSRF work.
+- **index.php:** removed a stray docblock, `==` to `===`, red inline style
+  replaced by the `.error` class, viewport tag no longer blocks zoom, added
+  the missing `</main>`. Confirmed `auth.php` sends `error=falseLoginStatus`
+  and the message shows.
+- **errors.php:** `errMessage` is read and cleared at the top instead of an
+  `unset` after `</html>`; the `<p>` wrapper (invalid around `<h3>`) is now a
+  `<div>`. It shows `brewNav.php` when logged in and `signInNav.php` otherwise,
+  which fixed the unstyled links (the old hand-written `<nav>` had no
+  `.brew-nav` class; `login.php` now stores only the heading).
+- **Rule:** `errMessage` holds trusted HTML and is echoed raw. A grep of every
+  assignment showed only fixed strings. Never put user input in it.
+- **delete/deleteBrew.php:** `is_string()` guard before `ctype_digit()` (a
+  posted `brewID[]` is an array), redirect moved out of the `try`, style fixes.
+  Already correct: POST only, `userID` in the WHERE, prepared statement.
+- **brewNav.php:** doc comment now lists `metrics`. Every nav page sets
+  `$activePage` correctly. `signInNav.php` needed no change (guests see
+  Logout and Coffees links; cosmetic).
+- **Known gaps:** no CSRF tokens (matters most for the delete handlers), no
+  login rate limiting, logout via GET.
+- **Still unconfirmed:** `git check-ignore includes/db_connect.php`.
 
 ### 2026-11-05: Style/security review, part 1 (branch `review-untouched-files`)
 
