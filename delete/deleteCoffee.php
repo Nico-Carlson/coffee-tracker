@@ -1,4 +1,5 @@
 <?php
+
 // lives in delete/, so everything in the project root is reached with ../
 require __DIR__ . '/../includes/db_connect.php';
 /** @var PDO $pdo */
@@ -8,6 +9,11 @@ requireLogin('../');
 // only accept POST with a valid id
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['coffeeId']) || !ctype_digit($_POST['coffeeId'])) {
     header('Location: ../coffees.php');
+    exit();
+}
+if (!csrfValid()) {
+    $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='coffees.php'>Back to coffees</a>";
+    header('Location: ../errors.php');
     exit();
 }
 

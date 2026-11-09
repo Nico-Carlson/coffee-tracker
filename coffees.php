@@ -120,6 +120,7 @@ require __DIR__ . '/includes/brewNav.php';
                 <form method="post" action="delete/deleteCoffee.php"
                       onsubmit="return confirm('<?= e($warn) ?>');">
                     <input type="hidden" name="coffeeId" value="<?= (int) $c['coffeeId'] ?>">
+                    <?= csrfField() ?>
                     <button type="submit" class="delete-btn">Delete</button>
                 </form>
             </div>
