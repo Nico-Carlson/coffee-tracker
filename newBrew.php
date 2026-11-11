@@ -18,6 +18,11 @@ foreach ($coffees as $row) {
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValid()) {
+        $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='newBrew.php'>New Brew</a>";
+        header('Location: errors.php');
+        exit();
+    }
     [$data, $errors] = readBrewInput(array_keys($coffeeNames));
 
     if (!$errors) {
@@ -73,6 +78,7 @@ require __DIR__ . '/includes/brewNav.php';
     <?php endif; ?>
 
     <form class='panel' action='newBrew.php' method='POST'>
+        <?= csrfField() ?>
         <div class='form-grid'>
 
 
