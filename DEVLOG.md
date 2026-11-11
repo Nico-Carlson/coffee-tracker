@@ -129,9 +129,11 @@
 - [x] `schema.sql` regenerated from the live database
 - [x] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
 - [x] Style/security review: all files reviewed (see the 2026-11-09 entry)
-- [x] CSRF tokens on every state-changing POST form, plus `SameSite=Lax` (branch
-      `csrf-tokens`; merge and tag `csrf-protection` pending)
-- [ ] More brew methods (not just pour over) and saved recipes per method
+- [x] CSRF tokens on every state-changing POST form, plus `SameSite=Lax`
+      (merged, tagged `csrf-protection`, 2026-11-10)
+- [ ] More brew methods and saved recipes (branch `brew-methods`, in progress):
+      `tblMethod`, `tblBrew.methodId` and the new/edit forms done; history page,
+      seeder, NOT NULL + foreign key, recipes and metrics by method still to do
 - [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
       cascade warning on coffee delete)
 - [ ] `declare(strict_types=1)` after checking callers (PDO ints vs `?int` params)
@@ -153,16 +155,50 @@
   server-side with `?sort=` and `?dir=` mapped through a whitelist array to a
   fixed `ORDER BY` fragment, since column names cannot be bound parameters.
 - Optional: fix or delete the early test brews with implausible `totalSeconds`.
+- Per-method defaults and grind options (espresso: finer, shorter; cold brew:
+  coarser, hours not minutes), so the form suits the chosen method.
 
 ## Next steps (in order)
 
-1. Review the files listed in Status for lint and security, one at a time.
-2. Metrics queries and dashboard.
-3. Docker, then CI, then (if time) router/repositories and the API.
+1. `brewHistory.php`: Method column (JOIN `tblMethod`).
+2. `DemoSeeder.php`: write `methodId`, spread across methods.
+3. Migration `007`: `methodId` NOT NULL + FK `fk_brew_method` to `tblMethod`
+   (ON DELETE RESTRICT). Run it in the same sitting as the seeder fix; re-run
+   the seeder to test.
+4. Regenerate `schema.sql` from the live database.
+5. Recipes: `tblRecipe` (user, method, name, dose, water, temp, grind, bloom,
+   time, notes; unique per user + method + name), a recipes page grouped by
+   method, "save as recipe" and "load recipe" on `newBrew.php`. Every new form
+   gets `csrfField()` and a `csrfValid()` check from the start.
+6. Metrics "by method". Update the nav brand ("Pour Overs"), the Goal line and
+   the README.
+7. Docker, CI, router/repositories, API (unchanged).
 
 - New chat: paste this file first, plus the file being edited.
 
 ## Changelog
+
+### 2026-11-10: Brew methods (branch `brew-methods`, not merged yet)
+
+- **Decision:** a fixed shared list of methods (lookup table), not user-defined.
+  Seeded: Pour over (1), French press (2), AeroPress (3), Espresso (4), Moka
+  pot (5), Cold brew (6), Automatic drip (7). Add more with a new migration.
+- **Migration `006_add_brew_methods.sql`:** creates `tblMethod` (unique name),
+  seeds it, adds `tblBrew.methodId` as NULLABLE and backfills every existing
+  brew to Pour over. Checked: 70 brews, 0 missing `methodId`.
+- **Order of work:** nullable column first, code second, NOT NULL + foreign key
+  last (migration 007). That avoids the broken-inserts problem from the
+  `coffeeId` change.
+- **Code:** `readBrewInput()` now takes `($allowedCoffeeIds, $allowedMethodIds)`
+  and returns `:methodId`; `newBrew.php` and `editBrew.php` load the method list,
+  show a Method dropdown and write `methodId`.
+- **Gotcha:** with `EMULATE_PREPARES => false`, PDO throws on a bound parameter
+  the SQL does not use, so `helpers.php` and both pages had to change together.
+- **Known breakage to fix before 007:** `database/seeds/DemoSeeder.php` inserts
+  into `tblBrew` without `methodId`. After 007 it will fail.
+- **Still open:** `brewHistory.php` does not show the method yet; the grind list
+  (Fine to Coarse) and the form defaults (15 g / 225 g / 202 °F / 45 s bloom)
+  are pour-over values and do not suit espresso or cold brew.
 
 ### 2026-11-10: CSRF tokens, part 2 (branch `csrf-tokens`)
 
