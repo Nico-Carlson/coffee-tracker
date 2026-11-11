@@ -21,6 +21,8 @@
   list of steps.
 - Tell me when to commit, branch, merge and tag. Give git commands with the
   message inline (`-m`), never open the editor.
+- After every commit, tell me to push it (`git push`; the first push of a new
+  branch is `git push -u origin <branch>`). Do not wait until the merge.
 - Say when something is a guess. Ask me to paste output instead of assuming
   database or file state.
 - Keep this file current: record context, decisions and gotchas as we go.
@@ -127,7 +129,9 @@
 - [x] `schema.sql` regenerated from the live database
 - [x] Demo-data seeder (`database/seeds/DemoSeeder.php`), see Next steps
 - [x] Style/security review: all files reviewed (see the 2026-11-09 entry)
-- [ ] CSRF tokens on POST forms (branch `csrf-tokens`, in progress): helpers and both delete forms done; see the 2026-11-09 CSRF entry for what is left
+- [x] CSRF tokens on every state-changing POST form, plus `SameSite=Lax` (branch
+      `csrf-tokens`; merge and tag `csrf-protection` pending)
+- [ ] More brew methods (not just pour over) and saved recipes per method
 - [ ] Replace browser `confirm()` popups with a styled `<dialog>` modal (keep the
       cascade warning on coffee delete)
 - [ ] `declare(strict_types=1)` after checking callers (PDO ints vs `?int` params)
@@ -160,6 +164,32 @@
 
 ## Changelog
 
+### 2026-11-10: CSRF tokens, part 2 (branch `csrf-tokens`)
+
+- **Wired:** add-coffee form (`coffees.php`), `newBrew.php`, the save branch of
+  `editBrew.php`, `login.php`, `newUser.php`, and logout. Each POST branch
+  starts with `if (!csrfValid())` and sends "Your form expired" to `errors.php`.
+- **Gotcha:** `csrfValid()` takes no argument and reads `$_POST['csrfToken']`
+  itself. Check an existing helper's signature before calling it.
+- **Edit button decision:** the form in `brewHistory.php` posts only `brewID`
+  (no `save`), so `editBrew.php` treats it as a load and writes nothing. It has
+  no token on purpose; a forged request can only display the form.
+- **Logout:** now a POST form with a token in both nav files (`.logout-form`,
+  `.logout-btn` in `coffee.css`). `logout.php` calls `session_start()` itself,
+  so it requires `includes/helpers.php` directly. A plain GET just redirects
+  home. A login page left open across a logout will say "form expired".
+- **Session cookie:** `session_set_cookie_params()` sets `SameSite=Lax` and
+  `HttpOnly` before `session_start()` in `db_connect.php`. `secure` is left off
+  because XAMPP is plain HTTP; turn it on with Docker and HTTPS.
+- **Template drift fixed:** `db_connect.example.php` had no `session_start()`,
+  no `helpers.php` require and no `$dbStatus`, so a fresh clone would not run.
+  It now mirrors the real file. Update both whenever one changes.
+- **Final check:** every file with `method="post"` also uses `csrfField()`;
+  `brewHistory.php` checked per form (delete has a token, Edit does not).
+- **Tested by hand:** each form works normally, and a tampered `csrfToken`
+  lands on the error page with nothing changed.
+- **Known gaps:** no login rate limiting, no `secure` cookie flag yet.
+
 ### 2026-11-09: CSRF tokens, part 1 (branch `csrf-tokens`, not merged yet)
 
 - **Why:** the delete handlers pass every existing check (POST only, logged in,
@@ -176,7 +206,7 @@
 - **Tested by hand:** both deletes work normally; editing the hidden
   `csrfToken` value to `bad` in dev tools lands on the error page and nothing
   is deleted.
-- **Not done yet, in this order:**
+- **Done in part 2 (see above), in this order:**
   1. Add-coffee form and POST branch in `coffees.php`.
   2. `newBrew.php`.
   3. `editBrew.php`. Guess, check the file first: it probably takes a POST from
