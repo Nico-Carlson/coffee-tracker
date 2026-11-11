@@ -15,6 +15,11 @@ try {
         $coffeeNames[(int) $row['coffeeId']] = $row['coffeeName'];
     }
 
+    $methodNames = [];
+    foreach ($pdo->query('SELECT methodId, methodName FROM tblMethod ORDER BY methodId')->fetchAll() as $row) {
+        $methodNames[(int) $row['methodId']] = $row['methodName'];
+    }
+
     $errors = [];
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         if (!csrfValid()) {
@@ -28,10 +33,10 @@ try {
             exit();
         }
 
-        [$data, $errors] = readBrewInput(array_keys($coffeeNames));
+        [$data, $errors] = readBrewInput(array_keys($coffeeNames), array_keys($methodNames));
         if (!$errors) {
             $stmt = $pdo->prepare(
-                'UPDATE tblBrew SET coffeeId = :coffeeId, coffeeGrams = :coffeeGrams,
+                'UPDATE tblBrew SET coffeeId = :coffeeId, methodId = :methodId, coffeeGrams = :coffeeGrams,
                         waterGrams = :waterGrams, brewDate = :brewDate, waterTemp = :waterTemp,
                         grindSize = :grindSize, bloomTime = :bloomTime, totalSeconds = :totalSeconds,
                         rating = :rating, brewNotes = :brewNotes
@@ -74,6 +79,7 @@ try {
 
 $grinds = ['Fine', 'Medium-fine', 'Medium', 'Medium-coarse', 'Coarse'];
 $selectedCoffeeId = (int) $brew['coffeeId'];
+$selectedMethodId = (int) $brew['methodId'];
 ?>
 <!doctype html>
 <html lang="en">
@@ -113,6 +119,14 @@ require __DIR__ . '/includes/brewNav.php';
                 <select id="coffeeId" name="coffeeId">
                     <?php foreach ($coffeeNames as $cid => $cname) : ?>
                         <option value="<?= e($cid) ?>" <?= $selectedCoffeeId === $cid ? 'selected' : '' ?>><?= e($cname) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class='field'>
+                <label for='methodId'>Method</label>
+                <select id="methodId" name="methodId">
+                    <?php foreach ($methodNames as $mid => $mname) : ?>
+                        <option value="<?= e($mid) ?>" <?= $selectedMethodId === $mid ? 'selected' : '' ?>><?= e($mname) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

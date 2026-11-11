@@ -23,7 +23,7 @@ function formatBrewTime(?int $sec): string
 }
 
 // validates the brew form; returns [params ready for execute(), errors]
-function readBrewInput(array $allowedCoffeeIds): array
+function readBrewInput(array $allowedCoffeeIds, array $allowedMethodIds): array
 {
     $errors = [];
     $grinds = ['Fine', 'Medium-fine', 'Medium', 'Medium-coarse', 'Coarse'];
@@ -48,6 +48,10 @@ function readBrewInput(array $allowedCoffeeIds): array
     if ($coffeeId === false || !in_array($coffeeId, $allowedCoffeeIds, true)) {
         $errors[] = 'Pick a coffee from the list.';
     }
+    $methodId = filter_var(post('methodId'), FILTER_VALIDATE_INT);
+    if ($methodId === false || !in_array($methodId, $allowedMethodIds, true)) {
+        $errors[] = 'Pick a brew method.';
+    }
 
     $grindSize = post('grindSize');
     if (!in_array($grindSize, $grinds, true)) {
@@ -67,6 +71,7 @@ function readBrewInput(array $allowedCoffeeIds): array
 
     return [[
         ':coffeeId'     => $coffeeId,
+        ':methodId'     => $methodId,
         ':brewDate'     => $brewDate,
         ':grindSize'    => $grindSize,
         ':coffeeGrams'  => $int('coffeeGrams', 1, 200, true, 'Coffee grams'),
