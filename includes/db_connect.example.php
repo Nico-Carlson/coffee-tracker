@@ -1,5 +1,7 @@
-// includes/db_connect.example.php
 <?php
+
+$dbStatus = "";
+
 $host = '127.0.0.1';
 $db   = 'coffee_tracker';
 $user = 'your_username';
@@ -15,6 +17,15 @@ $options = [
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
-} catch (\PDOException $e) {
-    throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    $dbStatus = "Good DB Connection";
+} catch (PDOException $e) {
+    $dbStatus = "Bad DB Connection: " . $e->getMessage();
 }
+
+session_set_cookie_params([
+    'samesite' => 'Lax',
+    'httponly' => true,
+]);
+
+session_start();
+require_once __DIR__ . '/helpers.php';
