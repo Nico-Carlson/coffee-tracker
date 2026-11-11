@@ -23,6 +23,9 @@ $activePage = $activePage ?? '';
 
     <div class="brew-side">
         <a href="index.php">Main page</a>
-        <a href="logout.php">Logout</a>
+        <form class="logout-form" action="logout.php" method="post">
+            <?= csrfField() ?>
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
     </div>
 </nav>
