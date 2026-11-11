@@ -17,6 +17,11 @@ try {
 
     $errors = [];
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+        if (!csrfValid()) {
+            $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='brewHistory.php'>Back to history</a>";
+            header('Location: errors.php');
+            exit();
+        }
         $id = $_POST['brewID'] ?? '';
         if (!ctype_digit($id)) {
             header('Location: brewHistory.php');
@@ -100,6 +105,7 @@ require __DIR__ . '/includes/brewNav.php';
     <form class="panel" action="editBrew.php" method="POST">
         <input type="hidden" name="brewID" value="<?= (int) $brew['brewID'] ?>">
         <input type="hidden" name="save" value="1">
+        <?= csrfField() ?>
 
         <div class="form-grid">
             <div class="field">

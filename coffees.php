@@ -9,6 +9,12 @@ requireLogin();
 // ---------- ADD a coffee ----------
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValid()) {
+        $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='coffees.php'>Back to coffees</a>";
+        header('Location: errors.php');
+        exit();
+    }
+
     $coffeeName = post('coffeeName');
     $roast      = post('roast');
 
@@ -120,6 +126,7 @@ require __DIR__ . '/includes/brewNav.php';
                 <form method="post" action="delete/deleteCoffee.php"
                       onsubmit="return confirm('<?= e($warn) ?>');">
                     <input type="hidden" name="coffeeId" value="<?= (int) $c['coffeeId'] ?>">
+                    <?= csrfField() ?>
                     <button type="submit" class="delete-btn">Delete</button>
                 </form>
             </div>
@@ -131,11 +138,14 @@ require __DIR__ . '/includes/brewNav.php';
 
             <?php if ($errors) : ?>
                 <div class="panel error"><ul>
-                        <?php foreach ($errors as $err) : ?><li><?= e($err) ?></li><?php endforeach; ?>
+                <?php foreach ($errors as $err) : ?>
+                <li><?= e($err) ?></li>
+                <?php endforeach; ?>
                     </ul></div>
             <?php endif; ?>
 
             <form class="panel" action="coffees.php" method="POST">
+                <?= csrfField() ?>
                 <div class="form-grid">
                     <div class="field">
                         <label for="coffeeName">Coffee</label>

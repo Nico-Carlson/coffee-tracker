@@ -5,6 +5,11 @@ require __DIR__ . '/includes/db_connect.php';
 
 // if the POST is set already send the user's login info to the db
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValid()) {
+        $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='login.php'>Back to login</a>";
+        header('Location: errors.php');
+        exit();
+    }
     $username = post('username');
     $password = $_POST['password'] ?? '';
     if (!is_string($password)) {
@@ -47,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 <form action="login.php" method="POST">
+    <?= csrfField() ?>
     <table>
         <tr>
             <th colspan="2">Enter Credentials</th>

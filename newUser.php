@@ -6,6 +6,11 @@ require __DIR__ . '/includes/db_connect.php';
 
 // once the user's input is in POST send to db
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrfValid()) {
+        $_SESSION['errMessage'] = "Your form expired. Please try again.<br><a href='newUser.php'>Back to sign up</a>";
+        header('Location: errors.php');
+        exit();
+    }
     $firstName = post('firstName');
     $lastName  = post('lastName');
     $username  = post('username');
@@ -70,6 +75,7 @@ if (isset($_GET['error'])) {
     <p class="error"><?= e($errorMessage) ?></p>
 <?php endif; ?>
 <form action="newUser.php" method="POST">
+<?= csrfField() ?>
   <table>
     <tr>
       <th colspan="2">

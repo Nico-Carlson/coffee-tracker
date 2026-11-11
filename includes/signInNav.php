@@ -1,4 +1,5 @@
 <?php
+
 /*
  * just call this in your file to use nav
  * require __DIR__ . '/includes/signInNav.php';
@@ -17,7 +18,10 @@
     </div>
 
     <div class="brew-side">
-        <a href="logout.php">Logout</a>
+        <form class="logout-form" action="logout.php" method="post">
+            <?= csrfField() ?>
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
         <a href="coffees.php">Coffees</a>
     </div>
 </nav>

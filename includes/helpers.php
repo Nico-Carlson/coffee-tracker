@@ -78,3 +78,27 @@ function readBrewInput(array $allowedCoffeeIds): array
         ':brewNotes'    => post('brewNotes'),
     ], $errors];
 }
+
+// returns the session's CSRF token, creating it on first use
+function csrfToken(): string
+{
+    if (empty($_SESSION['csrfToken']) || !is_string($_SESSION['csrfToken'])) {
+        $_SESSION['csrfToken'] = bin2hex(random_bytes(32));
+    }
+
+    return $_SESSION['csrfToken'];
+}
+
+// hidden field to place inside every POST form
+function csrfField(): string
+{
+    return '<input type="hidden" name="csrfToken" value="' . e(csrfToken()) . '">';
+}
+
+// true only if the submitted token matches the session's
+function csrfValid(): bool
+{
+    $sent = $_POST['csrfToken'] ?? '';
+
+    return is_string($sent) && hash_equals(csrfToken(), $sent);
+}
